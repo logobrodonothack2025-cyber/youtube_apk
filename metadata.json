@@ -1,0 +1,6 @@
+{
+  "name": "Instagram",
+  "description": "A sleek, feature-packed Instagram app with feed posts, stories, reels, explore grid, direct messages, create post studio, and profile.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
