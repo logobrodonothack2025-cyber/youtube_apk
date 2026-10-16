@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
@@ -51,6 +53,13 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     BackHandler { onBack() }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val openPostsSupportUrl = {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://support.google.com/accounts/answer/40039?hl=en&p=youtube"))
+            context.startActivity(intent)
+        } catch (_: Exception) {}
+    }
     var searchQuery by remember { mutableStateOf("") }
     var isPrivateAccount by remember { mutableStateOf(false) }
 
@@ -261,6 +270,16 @@ fun SettingsScreen(
             // Section: How you use Instagram
             item {
                 SettingsSectionHeader(title = "How you use Instagram")
+            }
+
+            item {
+                SettingsItemRow(
+                    icon = Icons.Default.GridOn,
+                    title = "Posts",
+                    subtitle = "Account status & policies: support.google.com",
+                    onClick = openPostsSupportUrl,
+                    tag = "setting_posts_browser_row"
+                )
             }
 
             item {

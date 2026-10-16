@@ -945,4 +945,94 @@ class InstagramRepository {
             }
         }
     }
+
+    fun toggleRepostPost(postId: String) {
+        val currentUsername = _currentUser.value.username
+        _posts.update { list ->
+            list.map { post ->
+                if (post.id == postId) {
+                    val newReposted = !post.isReposted
+                    val newCount = if (newReposted) post.repostsCount + 1 else (post.repostsCount - 1).coerceAtLeast(0)
+                    post.copy(
+                        isReposted = newReposted,
+                        repostsCount = newCount,
+                        repostedBy = if (newReposted) currentUsername else null
+                    )
+                } else post
+            }
+        }
+    }
+
+    fun toggleRepostReel(reelId: String) {
+        _reels.update { list ->
+            list.map { reel ->
+                if (reel.id == reelId) {
+                    val newReposted = !reel.isReposted
+                    val newCount = if (newReposted) reel.repostsCount + 1 else (reel.repostsCount - 1).coerceAtLeast(0)
+                    reel.copy(isReposted = newReposted, repostsCount = newCount)
+                } else reel
+            }
+        }
+    }
+
+    fun toggleRepostStory(storyId: String) {
+        val story = _stories.value.firstOrNull { it.id == storyId } ?: return
+        val current = _currentUser.value
+        val isAlreadyReposted = _stories.value.any { it.repostedFromUsername == story.user.username && it.user.id == current.id }
+
+        if (isAlreadyReposted) {
+            _stories.update { list ->
+                list.filterNot { it.repostedFromUsername == story.user.username && it.user.id == current.id }
+            }
+        } else {
+            val repostedStory = Story(
+                id = "story_repost_${System.currentTimeMillis()}",
+                user = current,
+                imageRes = story.imageRes,
+                timeAgo = "Just now",
+                caption = "🔁 Reposted from @${story.user.username}: ${story.caption ?: ""}",
+                isReposted = true,
+                repostedFromUsername = story.user.username
+            )
+            _stories.update { listOf(repostedStory) + it }
+        }
+    }
+
+    fun toggleFollowUser(userId: String) {
+        // Toggle follow status across users, posts, reels, stories
+        _availableAccounts.update { list ->
+            list.map { u ->
+                if (u.id == userId) {
+                    val newFollow = !u.isFollowing
+                    val newFollowers = if (newFollow) u.followersCount + 1 else (u.followersCount - 1).coerceAtLeast(0)
+                    u.copy(isFollowing = newFollow, followersCount = newFollowers)
+                } else u
+            }
+        }
+        _posts.update { list ->
+            list.map { post ->
+                if (post.user.id == userId) {
+                    val newFollow = !post.user.isFollowing
+                    val newFollowers = if (newFollow) post.user.followersCount + 1 else (post.user.followersCount - 1).coerceAtLeast(0)
+                    post.copy(user = post.user.copy(isFollowing = newFollow, followersCount = newFollowers))
+                } else post
+            }
+        }
+        _reels.update { list ->
+            list.map { reel ->
+                if (reel.user.id == userId) {
+                    val newFollow = !reel.user.isFollowing
+                    val newFollowers = if (newFollow) reel.user.followersCount + 1 else (reel.user.followersCount - 1).coerceAtLeast(0)
+                    reel.copy(user = reel.user.copy(isFollowing = newFollow, followersCount = newFollowers))
+                } else reel
+            }
+        }
+        _currentUser.update { me ->
+            val targetIsNowFollowed = _posts.value.firstOrNull { it.user.id == userId }?.user?.isFollowing
+                ?: _availableAccounts.value.firstOrNull { it.id == userId }?.isFollowing
+                ?: false
+            val newFollowing = if (targetIsNowFollowed) me.followingCount + 1 else (me.followingCount - 1).coerceAtLeast(0)
+            me.copy(followingCount = newFollowing)
+        }
+    }
 }

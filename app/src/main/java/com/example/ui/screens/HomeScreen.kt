@@ -65,6 +65,7 @@ fun HomeScreen(
     onRetryFeed: () -> Unit = {},
     onSimulateErrorClick: () -> Unit = {},
     onAudioClick: () -> Unit = {},
+    onRepostPost: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -255,6 +256,7 @@ fun HomeScreen(
                     onShareClick = { onShareClick(post) },
                     onUserClick = { onUserClick(post.user) },
                     onAudioClick = onAudioClick,
+                    onRepost = { onRepostPost(post.id) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -316,6 +318,7 @@ fun PostCard(
     onShareClick: () -> Unit,
     onUserClick: () -> Unit,
     onAudioClick: () -> Unit = {},
+    onRepost: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -327,6 +330,32 @@ fun PostCard(
             .background(MaterialTheme.colorScheme.surface)
             .testTag("post_card_${post.id}")
     ) {
+        // Repost Indicator Banner
+        if (post.isReposted || post.repostedBy != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Repeat,
+                    contentDescription = null,
+                    tint = Color(0xFF00BA7C),
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Reposted by ${post.repostedBy ?: "you"}",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = Color(0xFF00BA7C),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.5.sp
+                    )
+                )
+            }
+        }
+
         // Post Header
         Row(
             modifier = Modifier
@@ -484,6 +513,19 @@ fun PostCard(
                         modifier = Modifier.size(24.dp)
                     )
                 }
+
+                // Repost Button
+                IconButton(
+                    onClick = onRepost,
+                    modifier = Modifier.testTag("post_repost_button_${post.id}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Repeat,
+                        contentDescription = if (post.isReposted) "Undo Repost" else "Repost",
+                        tint = if (post.isReposted) Color(0xFF00BA7C) else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -521,14 +563,29 @@ fun PostCard(
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp)
         ) {
-            // Likes Count
-            Text(
-                text = "${"%,d".format(post.likesCount)} likes",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.5.sp
+            // Likes Count & Reposts Count
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "${"%,d".format(post.likesCount)} likes",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.5.sp
+                    )
                 )
-            )
+                if (post.repostsCount > 0) {
+                    Text(
+                        text = "•  ${"%,d".format(post.repostsCount)} reposts",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = if (post.isReposted) Color(0xFF00BA7C) else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.5.sp
+                        )
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(4.dp))
 

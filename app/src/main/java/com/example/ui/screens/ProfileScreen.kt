@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -45,6 +46,7 @@ import com.example.ui.theme.IgRedHeart
 enum class ProfileGridTab {
     POSTS,
     PLAYLISTS,
+    REPOSTS,
     SAVED,
     TAGGED
 }
@@ -54,22 +56,30 @@ fun ProfileScreen(
     user: User,
     posts: List<Post>,
     playlists: List<Playlist>,
-    onEditProfileClick: () -> Unit,
+    isCurrentUser: Boolean = true,
+    onEditProfileClick: () -> Unit = {},
     onPostClick: (String) -> Unit,
-    onPlaylistClick: (String) -> Unit,
-    onCreatePlaylistClick: () -> Unit,
-    onSettingsClick: () -> Unit,
-    onSwitchAccountClick: () -> Unit,
+    onPlaylistClick: (String) -> Unit = {},
+    onCreatePlaylistClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
+    onSwitchAccountClick: () -> Unit = {},
     onCreatePostClick: () -> Unit = {},
     onCreateReelClick: () -> Unit = {},
     onAccountStatusClick: () -> Unit = {},
+    onToggleFollow: () -> Unit = {},
+    onMessageClick: () -> Unit = {},
+    onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    if (onBack != null) {
+        androidx.activity.compose.BackHandler { onBack() }
+    }
     var selectedGridTab by remember { mutableStateOf(ProfileGridTab.POSTS) }
     var playlistPrivacyFilter by remember { mutableStateOf("All") } // "All", "Public", "Private"
     var showEmptyStatePreview by remember { mutableStateOf(false) }
 
     val userPosts = posts.filter { it.user.id == user.id || it.user.username == user.username }
+    val repostedPosts = posts.filter { it.isReposted || it.repostedBy == user.username }
     val savedPosts = posts.filter { it.isSaved }
 
     LazyColumn(
@@ -162,50 +172,94 @@ fun ProfileScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .clickable(onClick = onSwitchAccountClick)
-                        .testTag("profile_username_dropdown")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = "Private/Public account",
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = user.username,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 19.sp
+                if (!isCurrentUser) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        IconButton(
+                            onClick = { onBack?.invoke() },
+                            modifier = Modifier.size(36.dp).testTag("view_profile_back_btn")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = user.username,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 19.sp
+                            )
                         )
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = "Switch Account",
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                        if (user.isVerified) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = "Verified",
+                                tint = IgPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onCreatePlaylistClick) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { /* Notifications */ }) {
+                            Icon(Icons.Outlined.Notifications, contentDescription = "Notifications", modifier = Modifier.size(24.dp))
+                        }
+                        IconButton(onClick = { /* More options */ }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More", modifier = Modifier.size(24.dp))
+                        }
+                    }
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clickable(onClick = onSwitchAccountClick)
+                            .testTag("profile_username_dropdown")
+                    ) {
                         Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Create",
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Private/Public account",
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = user.username,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 19.sp
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Switch Account",
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                    IconButton(
-                        onClick = onSettingsClick,
-                        modifier = Modifier.testTag("profile_settings_menu_btn")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Settings and activity",
-                            modifier = Modifier.size(24.dp)
-                        )
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onCreatePlaylistClick) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Create",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        IconButton(
+                            onClick = onSettingsClick,
+                            modifier = Modifier.testTag("profile_settings_menu_btn")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Settings and activity",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -278,7 +332,7 @@ fun ProfileScreen(
             }
         }
 
-        // Action Buttons: Edit Profile & Share Profile
+        // Action Buttons: Edit Profile vs Follow / Message
         item {
             Row(
                 modifier = Modifier
@@ -286,49 +340,117 @@ fun ProfileScreen(
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Button(
-                    onClick = onEditProfileClick,
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(36.dp)
-                        .testTag("edit_profile_button"),
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Text(
-                        text = "Edit profile",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
-                    )
-                }
+                if (!isCurrentUser) {
+                    // View Profile Follow Button
+                    Button(
+                        onClick = onToggleFollow,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (user.isFollowing) MaterialTheme.colorScheme.surfaceVariant else IgPrimary,
+                            contentColor = if (user.isFollowing) MaterialTheme.colorScheme.onSurface else Color.White
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(36.dp)
+                            .testTag("view_profile_follow_button"),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (user.isFollowing) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Following",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+                                )
+                            } else {
+                                Text(
+                                    text = "Follow",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
+                        }
+                    }
 
-                Button(
-                    onClick = onCreatePlaylistClick,
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(36.dp)
-                        .testTag("create_playlist_button"),
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.QueueMusic,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
+                    Button(
+                        onClick = onMessageClick,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(36.dp)
+                            .testTag("view_profile_message_button"),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
                         Text(
-                            text = "New Playlist",
+                            text = "Message",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
                         )
+                    }
+
+                    OutlinedIconButton(
+                        onClick = { /* Suggested users */ },
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PersonAdd,
+                            contentDescription = "Suggested",
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                } else {
+                    Button(
+                        onClick = onEditProfileClick,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(36.dp)
+                            .testTag("edit_profile_button"),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = "Edit profile",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    }
+
+                    Button(
+                        onClick = onCreatePlaylistClick,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(36.dp)
+                            .testTag("create_playlist_button"),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.QueueMusic,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "New Playlist",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+                            )
+                        }
                     }
                 }
             }
@@ -403,11 +525,19 @@ fun ProfileScreen(
                     onClick = { selectedGridTab = ProfileGridTab.PLAYLISTS }
                 )
                 TabButton(
-                    selected = selectedGridTab == ProfileGridTab.SAVED,
-                    selectedIcon = Icons.Filled.Bookmark,
-                    unselectedIcon = Icons.Outlined.BookmarkBorder,
-                    onClick = { selectedGridTab = ProfileGridTab.SAVED }
+                    selected = selectedGridTab == ProfileGridTab.REPOSTS,
+                    selectedIcon = Icons.Default.Repeat,
+                    unselectedIcon = Icons.Default.Repeat,
+                    onClick = { selectedGridTab = ProfileGridTab.REPOSTS }
                 )
+                if (isCurrentUser) {
+                    TabButton(
+                        selected = selectedGridTab == ProfileGridTab.SAVED,
+                        selectedIcon = Icons.Filled.Bookmark,
+                        unselectedIcon = Icons.Outlined.BookmarkBorder,
+                        onClick = { selectedGridTab = ProfileGridTab.SAVED }
+                    )
+                }
                 TabButton(
                     selected = selectedGridTab == ProfileGridTab.TAGGED,
                     selectedIcon = Icons.Filled.PersonPin,
@@ -469,6 +599,7 @@ fun ProfileScreen(
             item {
                 val displayList = when (selectedGridTab) {
                     ProfileGridTab.POSTS -> if (showEmptyStatePreview) emptyList() else userPosts
+                    ProfileGridTab.REPOSTS -> repostedPosts
                     ProfileGridTab.SAVED -> savedPosts
                     ProfileGridTab.TAGGED -> emptyList()
                     else -> userPosts
@@ -597,6 +728,34 @@ fun ProfileScreen(
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop
                                     )
+                                    if (selectedGridTab == ProfileGridTab.REPOSTS || post.isReposted) {
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = Color.Black.copy(alpha = 0.65f),
+                                            modifier = Modifier
+                                                .padding(6.dp)
+                                                .align(Alignment.TopEnd)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Repeat,
+                                                    contentDescription = "Reposted",
+                                                    tint = Color(0xFF10B981),
+                                                    modifier = Modifier.size(11.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(2.dp))
+                                                Text(
+                                                    text = "Repost",
+                                                    color = Color.White,
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

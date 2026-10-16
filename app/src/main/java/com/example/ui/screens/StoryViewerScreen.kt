@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.QueueMusic
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -43,6 +44,7 @@ fun StoryViewerScreen(
     onClose: () -> Unit,
     onStoryViewed: (String) -> Unit,
     onAddToPlaylist: (Story) -> Unit,
+    onRepostStory: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     BackHandler { onClose() }
@@ -263,6 +265,21 @@ fun StoryViewerScreen(
                     imageVector = Icons.Outlined.QueueMusic,
                     contentDescription = "Add story to playlist",
                     tint = Color.White,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+
+            // Repost Story Button
+            IconButton(
+                onClick = { onRepostStory(currentStory.id) },
+                modifier = Modifier
+                    .size(44.dp)
+                    .testTag("story_repost_button")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Repeat,
+                    contentDescription = if (currentStory.isReposted) "Undo Repost" else "Repost story",
+                    tint = if (currentStory.isReposted) Color(0xFF00BA7C) else Color.White,
                     modifier = Modifier.size(26.dp)
                 )
             }

@@ -38,7 +38,10 @@ data class Post(
     val isSaved: Boolean = false,
     val location: String? = null,
     val filterName: String = "Normal",
-    val isCopyrightRemoved: Boolean = false
+    val isCopyrightRemoved: Boolean = false,
+    val isReposted: Boolean = false,
+    val repostsCount: Int = 14,
+    val repostedBy: String? = null
 )
 
 data class Story(
@@ -48,7 +51,9 @@ data class Story(
     val timeAgo: String,
     val isViewed: Boolean = false,
     val isCloseFriend: Boolean = false,
-    val caption: String? = null
+    val caption: String? = null,
+    val isReposted: Boolean = false,
+    val repostedFromUsername: String? = null
 )
 
 data class Comment(
@@ -111,7 +116,9 @@ data class ReelItem(
     val trialViewsCount: Int = 0,
     val trialNonFollowerPercentage: Int = 92,
     val trialDurationHoursLeft: Int = 48,
-    val isGraduatedFromTrial: Boolean = false
+    val isGraduatedFromTrial: Boolean = false,
+    val isReposted: Boolean = false,
+    val repostsCount: Int = 184
 )
 
 data class ChannelMessage(

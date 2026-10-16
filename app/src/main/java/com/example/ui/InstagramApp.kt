@@ -126,11 +126,10 @@ fun InstagramApp(
                                 viewModel.openOverlay(ActiveOverlay.DirectMessages)
                             },
                             onUserClick = { user ->
-                                if (user.id == currentUser.id) {
-                                    viewModel.setTab(MainTab.PROFILE)
-                                }
+                                viewModel.openUserProfile(user)
                             },
-                            onAudioClick = { viewModel.openAudioDetail() }
+                            onAudioClick = { viewModel.openAudioDetail() },
+                            onRepostPost = { postId -> viewModel.toggleRepostPost(postId) }
                         )
                     }
 
@@ -145,9 +144,7 @@ fun InstagramApp(
                                 viewModel.openOverlay(ActiveOverlay.PostDetail(postId))
                             },
                             onUserClick = { user ->
-                                if (user.id == currentUser.id) {
-                                    viewModel.setTab(MainTab.PROFILE)
-                                }
+                                viewModel.openUserProfile(user)
                             },
                             onTriggerActionNotAllowed = { viewModel.triggerSearchActionNotAllowed() },
                             onAudioClick = { viewModel.openAudioDetail() }
@@ -208,12 +205,11 @@ fun InstagramApp(
                                 )
                             },
                             onUserClick = { user ->
-                                if (user.id == currentUser.id) {
-                                    viewModel.setTab(MainTab.PROFILE)
-                                }
+                                viewModel.openUserProfile(user)
                             },
                             onGraduateTrialReel = { viewModel.graduateTrialReel(it) },
-                            onAudioClick = { viewModel.openAudioDetail() }
+                            onAudioClick = { viewModel.openAudioDetail() },
+                            onRepostReel = { reelId -> viewModel.toggleRepostReel(reelId) }
                         )
                     }
 
@@ -276,7 +272,8 @@ fun InstagramApp(
                                 )
                             )
                         )
-                    }
+                    },
+                    onRepostStory = { storyId -> viewModel.toggleRepostStory(storyId) }
                 )
             }
 
@@ -596,6 +593,29 @@ fun InstagramApp(
                     onSelectReel = { reelId ->
                         viewModel.closeOverlay()
                         viewModel.setTab(MainTab.REELS)
+                    },
+                    onBack = { viewModel.closeOverlay() }
+                )
+            }
+
+            is ActiveOverlay.ViewProfile -> {
+                val targetUser = availableAccounts.firstOrNull { it.id == overlay.user.id } ?: overlay.user
+                ProfileScreen(
+                    user = targetUser,
+                    posts = posts,
+                    playlists = playlists,
+                    isCurrentUser = false,
+                    onPostClick = { postId ->
+                        viewModel.openOverlay(ActiveOverlay.PostDetail(postId))
+                    },
+                    onPlaylistClick = { playlistId ->
+                        viewModel.openOverlay(ActiveOverlay.PlaylistDetail(playlistId))
+                    },
+                    onToggleFollow = {
+                        viewModel.toggleFollowUser(targetUser.id)
+                    },
+                    onMessageClick = {
+                        viewModel.openOverlay(ActiveOverlay.DirectMessages)
                     },
                     onBack = { viewModel.closeOverlay() }
                 )

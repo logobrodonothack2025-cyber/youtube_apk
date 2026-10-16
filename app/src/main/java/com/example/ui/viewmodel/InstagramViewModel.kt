@@ -65,6 +65,7 @@ sealed class ActiveOverlay {
     data object AccountStatus : ActiveOverlay()
     data object SubscriptionsPage : ActiveOverlay()
     data class AudioDetail(val audioTrack: AudioTrackInfo) : ActiveOverlay()
+    data class ViewProfile(val user: User) : ActiveOverlay()
 }
 
 class InstagramViewModel(
@@ -420,5 +421,30 @@ class InstagramViewModel(
 
     fun openAudioDetail(track: AudioTrackInfo = repository.featuredAudioTrack.value) {
         _activeOverlay.value = ActiveOverlay.AudioDetail(track)
+    }
+
+    fun toggleRepostPost(postId: String) {
+        repository.toggleRepostPost(postId)
+    }
+
+    fun toggleRepostReel(reelId: String) {
+        repository.toggleRepostReel(reelId)
+    }
+
+    fun toggleRepostStory(storyId: String) {
+        repository.toggleRepostStory(storyId)
+    }
+
+    fun toggleFollowUser(userId: String) {
+        repository.toggleFollowUser(userId)
+    }
+
+    fun openUserProfile(user: User) {
+        if (user.id == currentUser.value.id) {
+            closeOverlay()
+            setTab(MainTab.PROFILE)
+        } else {
+            _activeOverlay.value = ActiveOverlay.ViewProfile(user)
+        }
     }
 }

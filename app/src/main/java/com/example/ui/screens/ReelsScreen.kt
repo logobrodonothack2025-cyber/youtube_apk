@@ -49,6 +49,7 @@ fun ReelsScreen(
     onUserClick: (User) -> Unit,
     onGraduateTrialReel: (String) -> Unit = {},
     onAudioClick: (String) -> Unit = {},
+    onRepostReel: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState(pageCount = { reels.size })
@@ -80,7 +81,8 @@ fun ReelsScreen(
                 onUserClick = { onUserClick(reel.user) },
                 onOpenWatchUpNext = { showWatchUpNextSheet = true },
                 onOpenTrialInsights = { selectedTrialReelForInsights = reel },
-                onAudioClick = { onAudioClick(reel.audioTrack) }
+                onAudioClick = { onAudioClick(reel.audioTrack) },
+                onRepost = { onRepostReel(reel.id) }
             )
         }
 
@@ -188,7 +190,8 @@ fun ReelCard(
     onUserClick: () -> Unit,
     onOpenWatchUpNext: () -> Unit = {},
     onOpenTrialInsights: () -> Unit = {},
-    onAudioClick: () -> Unit = {}
+    onAudioClick: () -> Unit = {},
+    onRepost: () -> Unit = {}
 ) {
     var isFollowing by remember { mutableStateOf(false) }
 
@@ -296,6 +299,29 @@ fun ReelCard(
                     text = "${"%,d".format(reel.sharesCount)}",
                     color = Color.White,
                     fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            // Repost Reel
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                IconButton(
+                    onClick = onRepost,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .testTag("reel_repost_button_${reel.id}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Repeat,
+                        contentDescription = if (reel.isReposted) "Undo Repost" else "Repost reel",
+                        tint = if (reel.isReposted) Color(0xFF00BA7C) else Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+                Text(
+                    text = if (reel.repostsCount > 0) "${"%,d".format(reel.repostsCount)}" else "Repost",
+                    color = if (reel.isReposted) Color(0xFF00BA7C) else Color.White,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }
